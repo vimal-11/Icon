@@ -65,7 +65,7 @@ admin.site.register(Registration, RegistrationAdmin)
 
 class TeamsAdmin(admin.ModelAdmin):
     list_filter = ['team_lead', 'team_member', 'event']
-    list_display = ['team_lead', 'team_member', 'event']
+    list_display = ['team_lead', 'event']
     search_fields = ['team_lead', 'team_member', 'event']
 
     class Meta:

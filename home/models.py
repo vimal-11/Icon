@@ -108,8 +108,8 @@ class Registration(models.Model):
 class Teams(models.Model):
 
     team_lead = models.ForeignKey(Students, on_delete=models.CASCADE, blank=True, null=True, related_name='lead_teams')
-    team_member = models.ForeignKey(Students, on_delete=models.CASCADE, blank=True, null=True, related_name='member_teams')
+    team_member = models.ManyToManyField(Students, related_name='member_teams')
     event = models.ForeignKey(Events, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
-        return self.event.title
+        return f"{self.team_lead.name}'s Team for {self.event.title}"

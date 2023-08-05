@@ -79,3 +79,27 @@ class RegisteredEventsView(generics.ListAPIView):
         # Filter registrations by the student_id
         queryset = Registration.objects.filter(student__id=student_id)
         return queryset
+    
+
+
+class EventsByCategoryView(generics.ListAPIView):
+    serializer_class = EventsSerializer
+
+    def get_queryset(self):
+        # Get the category from the URL parameters
+        category = self.kwargs['category']
+        # Filter events by the category
+        queryset = Events.objects.filter(category=category)
+        return queryset
+    
+
+
+class TeamsListCreateView(generics.ListCreateAPIView):
+    queryset = Teams.objects.all()
+    serializer_class = TeamsSerializer
+
+
+
+class TeamsDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Teams.objects.all()
+    serializer_class = TeamsSerializer

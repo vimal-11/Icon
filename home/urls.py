@@ -12,4 +12,7 @@ urlpatterns = [
 
     path('register/', RegistrationCreateView.as_view(), name='register-event'),
     path('students/<int:student_id>/events/', RegisteredEventsView.as_view(), name='registered-events'),
+
+    path('teams/', TeamsListCreateView.as_view(), name='teams-list'),
+    path('teams/<int:pk>/', TeamsDetailView.as_view(), name='teams-detail'),
 ]
