@@ -1,0 +1,9 @@
+.env
+*.pyc
+*.sqlite
+*.sqlite3
+*.log
+*.rar
+*/__pycache__
+static/home/scss
+static/home/lib
