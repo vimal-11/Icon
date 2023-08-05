@@ -56,6 +56,26 @@ class StudentListCreateView(generics.ListCreateAPIView):
     queryset = Students.objects.all()
     serializer_class = StudentsSerializer
 
+
+
 class StudentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Students.objects.all()
     serializer_class = StudentsSerializer
+
+
+
+class RegistrationCreateView(generics.CreateAPIView):
+    queryset = Registration.objects.all()
+    serializer_class = RegistrationSerializer
+
+
+
+class RegisteredEventsView(generics.ListAPIView):
+    serializer_class = RegistrationSerializer
+
+    def get_queryset(self):
+        # Get the student_id from the URL parameters
+        student_id = self.kwargs['student_id']
+        # Filter registrations by the student_id
+        queryset = Registration.objects.filter(student__id=student_id)
+        return queryset

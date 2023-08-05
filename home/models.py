@@ -101,7 +101,7 @@ class Registration(models.Model):
     registered_at = models.DateTimeField(auto_now=True) 
 
     def __str__(self):
-        return self.event.title
+        return f"{self.student.name} - {self.event.title}"
     
 
 
