@@ -55,6 +55,7 @@ class Students(models.Model):
     email = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     ph_no = PhoneNumberField(null=False, blank=False)
     is_approved = models.BooleanField(default=False)
+    id_card = models.ImageField(upload_to='ID_Cards', null=True, blank=True)
     #idcard
     
     def __str__(self):

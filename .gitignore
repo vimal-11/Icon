@@ -7,3 +7,5 @@
 */__pycache__
 static/home/scss
 static/home/lib
+media/ID_Cards
+*.jpeg
