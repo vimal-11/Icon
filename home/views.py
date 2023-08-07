@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from rest_framework import generics, permissions, viewsets
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -8,11 +9,16 @@ from rest_framework.settings import api_settings
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from django.contrib.auth import authenticate, login, logout
 
 from .models import *
 from .serializers import *
 # Create your views here.
 
+
+# razorpay client
+# razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
 @api_view(['GET'])
 @permission_classes([permissions.DjangoModelPermissionsOrAnonReadOnly])
@@ -36,6 +42,28 @@ class CustomAuthTokenView(ObtainAuthToken):
         token = response.data['token']
         user = CustomUser.objects.get(auth_token=token)
         return Response({'token': token, 'email': user.email})
+    
+
+
+class LoginView(APIView):
+    permission_classes = [permissions.AllowAny]
+    def post(self, request, format=None):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        user = authenticate(request, username=email, password=password)
+        print(user)
+        if user is not None:
+            login(request, user)
+            token, created = Token.objects.get_or_create(user=user)
+            return Response({'token': token.key, 'success': True}, status=status.HTTP_200_OK)
+        return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+
+# class LogoutView(APIView):
+#     def post(self, request, format=None):
+#         logout(request)
+#         return Response(status=status.HTTP_204_NO_CONTENT)
     
 
 
