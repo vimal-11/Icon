@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -11,6 +12,9 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.contrib.auth import authenticate, login, logout
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import razorpay
 
 
 from .models import *
@@ -19,7 +23,7 @@ from .serializers import *
 
 
 # razorpay client
-# razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
 @api_view(['GET'])
 @permission_classes([permissions.DjangoModelPermissionsOrAnonReadOnly])
@@ -127,8 +131,78 @@ class TeamsListCreateView(generics.ListCreateAPIView):
     queryset = Teams.objects.all()
     serializer_class = TeamsSerializer
 
+    def perform_create(self, serializer):
+        team = serializer.save()  # Save the team
+        # Create registration objects for each team member
+        for member in team.team_member.all():
+            Registration.objects.create(event=team.event, student=member)
+        # If you want to return the created team along with its registrations in the response
+        serializer.instance = team
+
 
 
 class TeamsDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Teams.objects.all()
     serializer_class = TeamsSerializer
+
+
+
+
+class RazorpayPaymentView(APIView):
+    permission_classes = [permissions.AllowAny]
+    def post(self, request, format=None):
+        student_id = request.data.get('student_id')
+        event_id = request.data.get('event_id')
+        amount = request.data.get('amount')  # Amount in paisa
+
+        # Get the student and event
+        try:
+            student = Students.objects.get(pk=student_id)
+            event = Events.objects.get(pk=event_id)
+        except (Students.DoesNotExist, Events.DoesNotExist):
+            return Response({'error': 'Student or Event not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Create an order
+        response = razorpay_client.order.create({'amount': amount, 'currency': 'INR'})
+
+        # Save payment details to the database
+        payment = Payment.objects.create(
+            student=student,
+            event=event,
+            order_id=response.get('id'),
+            amount=response.get('amount'),
+            currency=response.get('currency'),
+            status='Pending'  # You can set an initial status
+        )
+
+        response_data = {
+                "callback_url": "http://127.0.0.1:8000/api/callback",
+                "razorpay_key": settings.RAZORPAY_KEY_ID,
+                "order": response,
+                "event_name": event,
+                "student_name": student
+        }
+
+        print(response_data)
+        return Response(response_data, status=status.HTTP_200_OK)
+    
+
+# The data we get from Razorpay is given below:
+# {
+#   "razorpay_payment_id": "pay_29QQoUBi66xm2f",
+#   "razorpay_order_id": "order_9A33XWu170gUtm",
+#   "razorpay_signature": "9ef4dffbfd84f1318f6739a3ce19f9d85851857ae648f114332d8401e0949a3d"
+# }
+
+
+@csrf_exempt
+def order_callback(request):
+    if request.method == "POST":
+        if "razorpay_signature" in request.POST:
+            payment_verification = razorpay_client.utility.verify_payment_signature(request.POST)
+            if payment_verification:
+                return JsonResponse({"res":"success"})
+                # Logic to perform is payment is successful
+            else:
+                return JsonResponse({"res":"failed"})
+                # Logic to perform is payment is unsuccessful

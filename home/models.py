@@ -114,3 +114,16 @@ class Teams(models.Model):
 
     def __str__(self):
         return f"{self.team_lead.name}'s Team for {self.event.title}"
+    
+
+
+class Payment(models.Model):
+    student = models.ForeignKey(Students, on_delete=models.CASCADE)
+    event = models.ForeignKey(Events, on_delete=models.CASCADE)
+    order_id = models.CharField(max_length=255)
+    amount = models.PositiveIntegerField()
+    currency = models.CharField(max_length=3)
+    status = models.CharField(max_length=20)
+
+    def __str__(self):
+        return f"{self.student.name} - {self.event.title} - Payment {self.id}"

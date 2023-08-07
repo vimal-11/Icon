@@ -17,4 +17,5 @@ urlpatterns = [
     path('teams/', TeamsListCreateView.as_view(), name='teams-list'),
     path('teams/<int:pk>/', TeamsDetailView.as_view(), name='teams-detail'),
 
+    path('api/razorpay/', RazorpayPaymentView.as_view(), name='razorpay'),
 ]
