@@ -3,6 +3,7 @@ from .views import *
 
 urlpatterns = [
     path('', student_list),
+    path('get_user_data/', get_user_data, name='get-user'),
     path('signup/', CustomUserCreateView.as_view(), name='user-register'),
     # path('login/', CustomAuthTokenView.as_view(), name='user-login'),
     path('login/', LoginView.as_view(), name='user-login'),

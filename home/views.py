@@ -85,6 +85,15 @@ class LogoutView(APIView):
     
 
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_data(request):
+    user = request.user
+    data = {'username': user.email}
+    return Response(data)
+
+
 class StudentListCreateView(generics.ListCreateAPIView):
     queryset = Students.objects.all()
     serializer_class = StudentsSerializer
