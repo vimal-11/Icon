@@ -50,13 +50,12 @@ class Students(models.Model):
     name = models.CharField(max_length=100)
     college = models.CharField(max_length=200)
     dept = models.CharField(max_length=200)
-    year = models.IntegerField
+    year = models.IntegerField(null=True,blank=True)
     # email = models.EmailField(verbose_name="email", max_length=60)
     email = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     ph_no = PhoneNumberField(null=False, blank=False)
     is_approved = models.BooleanField(default=False)
     id_card = models.ImageField(upload_to='ID_Cards', null=True, blank=True)
-    #idcard
     
     def __str__(self):
         return self.name

@@ -60,9 +60,9 @@ class LoginView(APIView):
         if user is not None:
             login(request, user)
             token, created = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key, 'success': True}, status=status.HTTP_200_OK)
+            return Response({'token': token.key, 'user_id': user.id, 'success': True}, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-
+    
 
 
 # class LogoutView(APIView):
@@ -95,12 +95,46 @@ def get_user_data(request):
 
 
 class StudentListCreateView(generics.ListCreateAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = Students.objects.all()
     serializer_class = StudentsSerializer
+
+    def post(self, request, *args, **kwargs):
+        # Print the received authentication token from frontend
+        auth_token = request.auth
+        print("Received authentication token:",auth_token)
+        print(request.data)
+        email=request.user
+        user=CustomUser.objects.get(email=email)
+        print(user)
+        data = {
+            'name': request.data.get('name'),
+            'college': request.data.get('college'),
+            'dept': request.data.get('dept'),
+            'year': request.data.get('year'),
+            'email': user, 
+            'ph_no': request.data.get('ph_no'),
+            # 'id_card': request.data.get('id_card'),
+        }
+
+        # Create a Student object
+        student = Students(**data)
+        student.save()
+        # get id card file
+        id_card_image = request.FILES.get('id_card')
+        if id_card_image:
+            # Save the ID card image
+            student.id_card.save(id_card_image.name, id_card_image, save=True)
+        student.save()
+        return Response({"message": "Student object created successfully."})
+
 
 
 
 class StudentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = Students.objects.all()
     serializer_class = StudentsSerializer
 
