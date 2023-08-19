@@ -14,6 +14,7 @@ from rest_framework import status
 from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
 import razorpay
 
 
@@ -32,6 +33,14 @@ def student_list(request):
     serializer = StudentsSerializer(students, many=True)
     return Response(serializer.data)
     
+
+
+@api_view(['GET'])
+def event_names(request):
+    events = Events.objects.all()
+    event_names = [event.title for event in events]
+    return JsonResponse(event_names, safe=False) 
+
 
 
 class CustomUserCreateView(generics.CreateAPIView):
@@ -60,7 +69,11 @@ class LoginView(APIView):
         if user is not None:
             login(request, user)
             token, created = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key, 'user_id': user.id, 'success': True}, status=status.HTTP_200_OK)
+            user_obj=CustomUser.objects.get(email=email)
+            # student=Students.objects.get(email=user_obj)
+            student=user_obj.students_set.first()
+            print(student)
+            return Response({'token': token.key, 'user_id':user.id,'user_name':student.name,'success':True}, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
     
 
@@ -92,6 +105,7 @@ def get_user_data(request):
     user = request.user
     data = {'username': user.email}
     return Response(data)
+
 
 
 class StudentListCreateView(generics.ListCreateAPIView):
@@ -144,6 +158,32 @@ class RegistrationCreateView(generics.CreateAPIView):
     queryset = Registration.objects.all()
     serializer_class = RegistrationSerializer
 
+    def post(self, request, *args, **kwargs):
+        print("Received data from frontend:")
+        print("Request data:", request.data)
+        event = self.request.data.get('event')
+        student_id = self.request.data.get('student')
+        student_name=self.request.data.get('name')
+        is_paid = self.request.data.get('is_paid')
+        event_instance=Events.objects.get(title=event)
+        student_instance = Students.objects.get(pk=student_id)
+        # print(student_instance,type(student_instance),type(event_instance))
+        try:
+            registration=Registration(event=event_instance,student=student_instance)
+            registration.save()
+
+            # Check if the event is a team event
+            if event_instance.is_team:
+                # Create a Teams instance with the student as team lead
+                team_lead = student_instance
+                new_team = Teams.objects.create(team_lead=team_lead, event=event_instance)
+                new_team.team_member.add(student_instance)  # Add student as a team member
+
+            serializer=RegistrationSerializer(registration)
+            return Response(serializer.data,status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class RegisteredEventsView(generics.ListAPIView):
@@ -170,6 +210,7 @@ class EventsByCategoryView(generics.ListAPIView):
     
 
 
+
 class TeamsListCreateView(generics.ListCreateAPIView):
     queryset = Teams.objects.all()
     serializer_class = TeamsSerializer
@@ -181,6 +222,41 @@ class TeamsListCreateView(generics.ListCreateAPIView):
             Registration.objects.create(event=team.event, student=member)
         # If you want to return the created team along with its registrations in the response
         serializer.instance = team
+
+
+
+
+class TeamMemberAddView(generics.UpdateAPIView):
+    serializer_class = TeamMemberSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return Teams.objects.get(pk=self.kwargs['pk'])
+    
+
+    def get_queryset(self):
+        instance = self.get_object()
+        event = instance.event
+        team_members = instance.team_member.all()  # Existing team members
+        lead_team_members = event.teams.lead_teams.values_list('team_member', flat=True)  # Members of other teams
+        
+        # Exclude students who are already part of the existing team and other teams
+        return Students.objects.filter(
+            ~Q(pk__in=team_members) & ~Q(pk__in=lead_team_members)
+        )
+    
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, context={'instance': instance})
+        serializer.is_valid(raise_exception=True)
+        team_member = serializer.validated_data['team_member']
+
+        instance.team_member.add(team_member)
+        Registration.objects.create(event=instance.event, student=team_member)
+
+        return Response({"message": "Team member added successfully"}, status=status.HTTP_200_OK)
+
 
 
 

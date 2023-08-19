@@ -49,3 +49,23 @@ class TeamsSerializer(serializers.ModelSerializer):
      class Meta:
         model = Teams
         fields = '__all__'
+
+
+
+class RegisteredEventSerializer(serializers.ModelSerializer):
+    event = EventsSerializer()  # Include the event details
+    class Meta:
+        model = Registration
+        fields = ('event', 'is_paid')  # Customize fields as needed
+        
+
+
+class TeamMemberSerializer(serializers.Serializer):
+    team_member = serializers.PrimaryKeyRelatedField(queryset=Students.objects.all())
+
+    def validate_team_member(self, value):
+        instance = self.context['instance']
+        event = instance.event
+        if value in event.teams.team_member.all():
+            raise serializers.ValidationError("This student is already in a team for this event.")
+        return value
