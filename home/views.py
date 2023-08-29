@@ -23,8 +23,11 @@ from .serializers import *
 # Create your views here.
 
 
+
 # razorpay client
 razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+
 
 @api_view(['GET'])
 @permission_classes([permissions.DjangoModelPermissionsOrAnonReadOnly])
@@ -38,8 +41,9 @@ def student_list(request):
 @api_view(['GET'])
 def event_names(request):
     events = Events.objects.all()
-    event_names = [event.title for event in events]
-    return JsonResponse(event_names, safe=False) 
+    # event_names = [event.title for event in events]
+    return JsonResponse(events, safe=False) 
+
 
 
 
@@ -50,6 +54,7 @@ class CustomUserCreateView(generics.CreateAPIView):
 
 
 
+
 class CustomAuthTokenView(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         response = super(CustomAuthTokenView, self).post(request, *args, **kwargs)
@@ -57,6 +62,7 @@ class CustomAuthTokenView(ObtainAuthToken):
         user = CustomUser.objects.get(auth_token=token)
         return Response({'token': token, 'email': user.email})
     
+
 
 
 class LoginView(APIView):
@@ -71,9 +77,14 @@ class LoginView(APIView):
             token, created = Token.objects.get_or_create(user=user)
             user_obj=CustomUser.objects.get(email=email)
             # student=Students.objects.get(email=user_obj)
-            student=user_obj.students_set.first()
+            uname = None
+            try:
+                student=user_obj.students_set.first()
+                uname = student.name 
+            except:
+                print("Student Profile not created") 
             print(student)
-            return Response({'token': token.key, 'user_id':user.id,'user_name':student.name,'success':True}, status=status.HTTP_200_OK)
+            return Response({'token': token.key, 'user_id':user.id,'user_name':uname,'success':True}, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
     
 
@@ -105,6 +116,8 @@ def get_user_data(request):
     user = request.user
     data = {'username': user.email}
     return Response(data)
+
+
 
 
 
@@ -146,6 +159,7 @@ class StudentListCreateView(generics.ListCreateAPIView):
 
 
 
+
 class StudentDetailView(generics.RetrieveUpdateDestroyAPIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -154,9 +168,26 @@ class StudentDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 
+
+
 class RegistrationCreateView(generics.CreateAPIView):
     queryset = Registration.objects.all()
     serializer_class = RegistrationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        # Access the data from the request here
+        event_id = self.request.data.get('event')
+        student_id = self.request.data.get('student')
+        is_paid = self.request.data.get('is_paid')
+        
+        print("Received data from frontend:")
+        print("Event ID:", event_id)
+        print("Student ID:", student_id)
+        print("Is Paid:", is_paid)
+        
+        # Continue with creating the instance using the serializer
+        serializer.save()
 
     def post(self, request, *args, **kwargs):
         print("Received data from frontend:")
@@ -171,18 +202,23 @@ class RegistrationCreateView(generics.CreateAPIView):
         try:
             registration=Registration(event=event_instance,student=student_instance)
             registration.save()
-
+            team_id=None
             # Check if the event is a team event
             if event_instance.is_team:
                 # Create a Teams instance with the student as team lead
                 team_lead = student_instance
                 new_team = Teams.objects.create(team_lead=team_lead, event=event_instance)
                 new_team.team_member.add(student_instance)  # Add student as a team member
-
+                team_id = new_team.pk  
+                team_ld = new_team.team_lead 
             serializer=RegistrationSerializer(registration)
-            return Response(serializer.data,status=status.HTTP_201_CREATED)
+            data = {"serializer": serializer.data, "team_id": team_id, "team_lead": team_ld}
+            return Response(data,status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 
 
 
@@ -198,6 +234,9 @@ class RegisteredEventsView(generics.ListAPIView):
     
 
 
+
+
+
 class EventsByCategoryView(generics.ListAPIView):
     serializer_class = EventsSerializer
 
@@ -208,6 +247,7 @@ class EventsByCategoryView(generics.ListAPIView):
         queryset = Events.objects.filter(category=category)
         return queryset
     
+
 
 
 
@@ -226,6 +266,8 @@ class TeamsListCreateView(generics.ListCreateAPIView):
 
 
 
+
+
 class TeamMemberAddView(generics.UpdateAPIView):
     serializer_class = TeamMemberSerializer
     permission_classes = [IsAuthenticated]
@@ -238,17 +280,32 @@ class TeamMemberAddView(generics.UpdateAPIView):
         instance = self.get_object()
         event = instance.event
         team_members = instance.team_member.all()  # Existing team members
-        lead_team_members = event.teams.lead_teams.values_list('team_member', flat=True)  # Members of other teams
-        
+        lead_team_members = Teams.objects.filter(event=event).values_list('team_member', flat=True)  # Members of other teams
         # Exclude students who are already part of the existing team and other teams
-        return Students.objects.filter(
+        query_set = Students.objects.filter(
             ~Q(pk__in=team_members) & ~Q(pk__in=lead_team_members)
         )
+        print(query_set)
+        return query_set
+    
+    def get(self, request, *args, **kwargs):
+        instance = self.get_object()
+        queryset = self.get_queryset()
+        serializer = StudentsSerializer(queryset, many=True)
+        return Response(serializer.data)
     
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, context={'instance': instance})
+        print(instance)
+        print(request.data)
+        student_name=request.data.get("team_member",{})[0].get("name")
+        try:
+            team_member=Students.objects.get(name=student_name)
+        except Students.DoesNotExist:
+            return Response({"message": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
+        data_dict={"team_member":team_member.id}
+        serializer = self.get_serializer(instance, data=data_dict, context={'instance': instance})
         serializer.is_valid(raise_exception=True)
         team_member = serializer.validated_data['team_member']
 
@@ -260,9 +317,11 @@ class TeamMemberAddView(generics.UpdateAPIView):
 
 
 
+
 class TeamsDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Teams.objects.all()
     serializer_class = TeamsSerializer
+
 
 
 
@@ -306,6 +365,8 @@ class RazorpayPaymentView(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
     
 
+
+
 # The data we get from Razorpay is given below:
 # {
 #   "razorpay_payment_id": "pay_29QQoUBi66xm2f",
@@ -325,3 +386,53 @@ def order_callback(request):
             else:
                 return JsonResponse({"res":"failed"})
                 # Logic to perform is payment is unsuccessful
+
+
+
+
+
+
+class EventTeamLeadView(generics.RetrieveAPIView):
+    serializer_class = TeamsSerializer
+
+    def get_queryset(self):
+        student_id = self.kwargs['student_id']
+        event_id = self.kwargs['event_id']
+        queryset = Teams.objects.filter(event=event_id, team_lead=student_id)
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        student_id = self.kwargs['student_id']
+        event_id = self.kwargs['event_id']
+
+        try:
+            student = Students.objects.get(id=student_id)
+            event = Events.objects.get(id=event_id)
+            team = Teams.objects.get(event=event, team_lead=student)
+            serializer = self.get_serializer(team)
+            return Response(serializer.data)
+        except Students.DoesNotExist:
+            return Response({"message": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Events.DoesNotExist:
+            return Response({"message": "Event not found or student is not the team lead"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+
+
+class EventDetailView(generics.RetrieveAPIView):
+    serializer_class = EventsSerializer
+
+    def get_queryset(self):
+        event_id = self.kwargs['event_id']
+        queryset = Events.objects.filter(id=event_id)
+        return queryset
+
+    def get(self, request, *aargs, **kwargs):
+        event_id = self.kwargs['event_id']
+        try:
+            event = Events.objects.get(id=event_id)
+            serializer = self.get_serializer(event)
+            return Response(serializer.data)
+        except Events.DoesNotExist:
+            return Response({"message": "Event not found"}, status=status.HTTP_404_NOT_FOUND)

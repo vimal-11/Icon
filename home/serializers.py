@@ -64,8 +64,16 @@ class TeamMemberSerializer(serializers.Serializer):
     team_member = serializers.PrimaryKeyRelatedField(queryset=Students.objects.all())
 
     def validate_team_member(self, value):
-        instance = self.context['instance']
-        event = instance.event
-        if value in event.teams.team_member.all():
-            raise serializers.ValidationError("This student is already in a team for this event.")
+         # Get the event associated with this registration
+        event = self.instance.event
+        team_lead = self.instance.team_lead
+        print(event, team_lead, type(self.instance))
+        # Get the team instance for this event's team_lead
+        try:
+            team = Teams.objects.get(event=event, team_lead=team_lead)
+        except Teams.DoesNotExist:
+            raise serializers.ValidationError("You are not a team lead for this event.")
+        # Check if the team member is already in the team_member list
+        if value in team.team_member.all():
+            raise serializers.ValidationError("Student is already a team member for this event.")
         return value
