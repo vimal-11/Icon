@@ -12,9 +12,11 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.contrib.auth import authenticate, login, logout
+from django.core.files.storage import default_storage
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
+from django.db import IntegrityError
 import razorpay
 
 
@@ -28,7 +30,7 @@ from .serializers import *
 razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
 
-
+@csrf_exempt
 @api_view(['GET'])
 @permission_classes([permissions.DjangoModelPermissionsOrAnonReadOnly])
 def student_list(request):
@@ -40,9 +42,13 @@ def student_list(request):
 
 @api_view(['GET'])
 def event_names(request):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
     events = Events.objects.all()
-    # event_names = [event.title for event in events]
-    return JsonResponse(events, safe=False) 
+    print(events)
+    event_names = [event.title for event in events]
+    # event_names = [(event.title, event.is_paid) for event in events]
+    return JsonResponse(event_names, safe=False)  
 
 
 
@@ -166,6 +172,16 @@ class StudentDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Students.objects.all()
     serializer_class = StudentsSerializer
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        print(instance.get_id_card_url())
+        serializer = self.get_serializer(instance)
+        print("Student Detail Response:", serializer.data)  # Print the response data
+        image_path = 'ID_Cards/giri.png'
+        image_url = default_storage.url(image_path)
+        print("Generated Image URL:", settings.MEDIA_URL + image_url)
+        return Response(serializer.data)
+
 
 
 
@@ -194,7 +210,7 @@ class RegistrationCreateView(generics.CreateAPIView):
         print("Request data:", request.data)
         event = self.request.data.get('event')
         student_id = self.request.data.get('student')
-        student_name=self.request.data.get('name')
+        # student_name=self.request.data.get('name')
         is_paid = self.request.data.get('is_paid')
         event_instance=Events.objects.get(title=event)
         student_instance = Students.objects.get(pk=student_id)
@@ -203,17 +219,25 @@ class RegistrationCreateView(generics.CreateAPIView):
             registration=Registration(event=event_instance,student=student_instance)
             registration.save()
             team_id=None
+            team_ld=None
+            uname=None
             # Check if the event is a team event
             if event_instance.is_team:
                 # Create a Teams instance with the student as team lead
                 team_lead = student_instance
                 new_team = Teams.objects.create(team_lead=team_lead, event=event_instance)
                 new_team.team_member.add(student_instance)  # Add student as a team member
-                team_id = new_team.pk  
-                team_ld = new_team.team_lead 
+                team_id = new_team.pk   
+                serializer_team = TeamsSerializer(new_team)
+                team_ld = serializer_team.data.get("team_lead")
+                uname = Students.objects.get(pk=team_ld)
+                uname=uname.name
             serializer=RegistrationSerializer(registration)
-            data = {"serializer": serializer.data, "team_id": team_id, "team_lead": team_ld}
+            data = {"serializer": serializer.data, "team_id": team_id, "team_lead": uname}
             return Response(data,status=status.HTTP_201_CREATED)
+        except IntegrityError:
+        # Handle the case where a registration already exists for the given event and student
+            return Response({"error": "Registration already exists for this event and student."}, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -436,3 +460,14 @@ class EventDetailView(generics.RetrieveAPIView):
             return Response(serializer.data)
         except Events.DoesNotExist:
             return Response({"message": "Event not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+class RegisteredEventDetailView(generics.RetrieveAPIView):
+    serializer_class = RegisteredEventSerializer
+
+    def get_queryset(self):
+        reg_id = self.kwargs['pk']
+        queryset = Registration.objects.filter(id=reg_id)
+        return queryset

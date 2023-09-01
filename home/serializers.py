@@ -56,7 +56,8 @@ class RegisteredEventSerializer(serializers.ModelSerializer):
     event = EventsSerializer()  # Include the event details
     class Meta:
         model = Registration
-        fields = ('event', 'is_paid')  # Customize fields as needed
+        # fields = ('event', 'is_paid')  # Customize fields as needed
+        fields = '__all__'
         
 
 

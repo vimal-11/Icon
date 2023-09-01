@@ -105,6 +105,11 @@ class Registration(models.Model):
     is_paid = models.BooleanField(default=False)
     registered_at = models.DateTimeField(auto_now=True) 
 
+    class Meta:
+        # Enforce uniqueness of event-student pairs
+        unique_together = ('event', 'student')
+
+
     def __str__(self):
         return f"{self.student.name} - {self.event.title}"
     
