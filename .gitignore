@@ -8,4 +8,5 @@
 static/home/scss
 static/home/lib
 media/ID_Cards
+media/*
 *.jpeg

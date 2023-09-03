@@ -82,6 +82,9 @@ class Events(models.Model):
     venue = models.CharField(max_length=50)
     reg_fee = models.IntegerField()
     is_team = models.BooleanField(default=False)
+    banner = models.ImageField(upload_to='Event_Banners', null=True, blank=True)
+    poster = models.ImageField(upload_to='Event_Posters', null=True, blank=True)
+
 
     def __str__(self):
         return self.title
