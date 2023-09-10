@@ -72,3 +72,15 @@ class TeamsAdmin(admin.ModelAdmin):
         model = Teams
 
 admin.site.register(Teams, TeamsAdmin)
+
+
+
+class PaymentAdmin(admin.ModelAdmin):
+    list_filter = ['student', 'event', 'status', 'order_id', 'datetime']
+    list_display = ['student', 'event', 'status', 'order_id', 'datetime']
+    search_fields = ['student', 'event', 'status', 'datetime']
+
+    class Meta:
+        model = Payment
+
+admin.site.register(Payment, PaymentAdmin)

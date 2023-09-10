@@ -377,12 +377,17 @@ class RazorpayPaymentView(APIView):
             status='Pending'  # You can set an initial status
         )
 
+        event_serializer = EventsSerializer(event)
+        student_serializer = StudentsSerializer(student)
+        event_name = event_serializer.data.get("title")
+        student_name = student_serializer.data.get("name")
+
         response_data = {
                 "callback_url": "http://127.0.0.1:8000/api/callback",
                 "razorpay_key": settings.RAZORPAY_KEY_ID,
                 "order": response,
-                "event_name": event,
-                "student_name": student
+                "event_name": event_name,
+                "student_name": student_name
         }
 
         print(response_data)

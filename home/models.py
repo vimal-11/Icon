@@ -136,6 +136,8 @@ class Payment(models.Model):
     amount = models.PositiveIntegerField()
     currency = models.CharField(max_length=3)
     status = models.CharField(max_length=20)
+    datetime = models.DateTimeField(auto_now=True)
+
 
     def __str__(self):
         return f"{self.student.name} - {self.event.title} - Payment {self.id}"
