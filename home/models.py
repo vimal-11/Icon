@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
+from ckeditor.fields import RichTextField
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
 # Create your models here.
@@ -84,6 +85,7 @@ class Events(models.Model):
     is_team = models.BooleanField(default=False)
     banner = models.ImageField(upload_to='Event_Banners', null=True, blank=True)
     poster = models.ImageField(upload_to='Event_Posters', null=True, blank=True)
+    rules = RichTextField(blank=True, null=True)
 
 
     def __str__(self):

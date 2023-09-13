@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'home',
     'phonenumber_field',
     'corsheaders',
+    'ckeditor',
 ]
 
 
@@ -161,3 +162,8 @@ CORS_ALLOW_METHODS = [
     'POST',
     'PUT',
 ]
+
+
+CKEDITOR_UPLOAD_PATH = "ckeditor/uploads/"
+CKEDITOR_IMAGE_BACKEND = "pillow"
+CKEDITOR_RESTRICT_BY_USER = True  # If you want to restrict uploaded files to user-specific directories

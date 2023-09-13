@@ -1,4 +1,5 @@
 from django.contrib import admin
+from ckeditor.widgets import CKEditorWidget
 from .models import *
 
 # Register your models here.
@@ -28,6 +29,9 @@ admin.site.register(Students, StudentsAdmin)
 
 
 class EventsAdmin(admin.ModelAdmin):
+    formfield_overrides = {
+        models.TextField: {'widget': CKEditorWidget},
+    }
     list_filter = ['title', 'category']
     list_display = ['title', 'category', 'date', 'event_time', 'cordinator']
     search_fields = ['title', 'category', 'date', 'event_time', 'cordinator']
