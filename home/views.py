@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.mail import send_mail
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -15,9 +16,11 @@ from django.contrib.auth import authenticate, login, logout
 from django.core.files.storage import default_storage
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.db.models import Q
 from django.db import IntegrityError
 import razorpay
+import json
 
 
 from .models import *
@@ -476,3 +479,27 @@ class RegisteredEventDetailView(generics.RetrieveAPIView):
         reg_id = self.kwargs['pk']
         queryset = Registration.objects.filter(id=reg_id)
         return queryset
+    
+
+
+@csrf_exempt
+@require_POST
+def feedback(request):
+    print(request)
+    try:
+        data = json.loads(request.body)
+        name = data.get('name')
+        email = data.get('email')
+        message = data.get('message')
+
+        # Send an email to notify you about the feedback
+        subject = 'New Feedback Received'
+        message = f'Name: {name}\nEmail: {email}\nMessage: {message}'
+        from_email = settings.EMAIL_HOST_USER
+        recipient_list = [email]  # Replace with your email address
+
+        send_mail(subject, message, from_email, recipient_list)
+
+        return JsonResponse({'message': 'Feedback submitted successfully'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)})

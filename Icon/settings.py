@@ -167,3 +167,10 @@ CORS_ALLOW_METHODS = [
 CKEDITOR_UPLOAD_PATH = "ckeditor/uploads/"
 CKEDITOR_IMAGE_BACKEND = "pillow"
 CKEDITOR_RESTRICT_BY_USER = True  # If you want to restrict uploaded files to user-specific directories
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587  # The SMTP server's port (usually 587 for TLS)
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'icon.ptucse@gmail.com'  # Your email address
+EMAIL_HOST_PASSWORD = 'gzmj grte gygl mddv'
