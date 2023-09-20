@@ -23,7 +23,7 @@ urlpatterns = [
 
     path('api/razorpay/', RazorpayPaymentView.as_view(), name='razorpay'),
 
-    path('events/', event_names, name='event-names'),
+    path('events/', EventsList.as_view(), name='event-names'),
     path('event-detail/<int:event_id>/', EventDetailView.as_view(), name='event-detail'),
     path('reg-detail/<int:pk>/', RegisteredEventDetailView.as_view(), name='reg-detail'),
 

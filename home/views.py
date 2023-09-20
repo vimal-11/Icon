@@ -43,16 +43,23 @@ def student_list(request):
     
 
 
-@api_view(['GET'])
-def event_names(request):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-    events = Events.objects.all()
-    print(events)
-    event_names = [event.title for event in events]
-    # event_names = [(event.title, event.is_paid) for event in events]
-    return JsonResponse(event_names, safe=False)  
+# @api_view(['GET'])
+# def event_names(request):
+#     authentication_classes = [TokenAuthentication]
+#     permission_classes = [IsAuthenticated]
+#     events = Events.objects.all()
+#     print(events)
+#     event_names = [event.title for event in events]
+#     # event_names = [(event.title, event.is_paid) for event in events]
+#     return JsonResponse(event_names, safe=False)  
 
+
+class EventsList(APIView):
+    queryset = Events.objects.all()
+    def get(self, request, format=None):
+        events = Events.objects.all()
+        serializer = EventsSerializer(events, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 
@@ -170,19 +177,18 @@ class StudentListCreateView(generics.ListCreateAPIView):
 
 
 class StudentDetailView(generics.RetrieveUpdateDestroyAPIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    # authentication_classes = [TokenAuthentication]
+    # permission_classes = [IsAuthenticated]
     queryset = Students.objects.all()
     serializer_class = StudentsSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
+        uid=self.kwargs['pk']
+        custom_user=CustomUser.objects.get(pk=uid)
+        instance=Students.objects.get(email=custom_user)
         print(instance.get_id_card_url())
         serializer = self.get_serializer(instance)
         print("Student Detail Response:", serializer.data)  # Print the response data
-        image_path = 'ID_Cards/giri.png'
-        image_url = default_storage.url(image_path)
-        print("Generated Image URL:", settings.MEDIA_URL + image_url)
         return Response(serializer.data)
 
 
@@ -250,13 +256,13 @@ class RegistrationCreateView(generics.CreateAPIView):
 
 
 class RegisteredEventsView(generics.ListAPIView):
-    serializer_class = RegistrationSerializer
+    serializer_class = RegisteredEventSerializer
 
     def get_queryset(self):
-        # Get the student_id from the URL parameters
-        student_id = self.kwargs['student_id']
-        # Filter registrations by the student_id
-        queryset = Registration.objects.filter(student__id=student_id)
+        uid = self.kwargs['student_id']
+        user_instance=CustomUser.objects.get(pk=uid)
+        student_id=Students.objects.get(email=user_instance)
+        queryset = Registration.objects.filter(student_id=student_id)
         return queryset
     
 
@@ -428,13 +434,17 @@ class EventTeamLeadView(generics.RetrieveAPIView):
     serializer_class = TeamsSerializer
 
     def get_queryset(self):
-        student_id = self.kwargs['student_id']
+        uid = self.kwargs['student_id']
+        user_instance=CustomUser.objects.get(pk=uid)
+        student_id=Students.objects.get(email=user_instance)    
         event_id = self.kwargs['event_id']
         queryset = Teams.objects.filter(event=event_id, team_lead=student_id)
         return queryset
 
     def get(self, request, *args, **kwargs):
-        student_id = self.kwargs['student_id']
+        uid = self.kwargs['student_id']
+        user_instance=CustomUser.objects.get(pk=uid)
+        student_id=Students.objects.get(email=user_instance)
         event_id = self.kwargs['event_id']
 
         try:
@@ -480,6 +490,35 @@ class RegisteredEventDetailView(generics.RetrieveAPIView):
         queryset = Registration.objects.filter(id=reg_id)
         return queryset
     
+    def get(self, *args, **kwargs):
+        reg_id = self.kwargs['pk']
+        reg_obj = Registration.objects.get(id=reg_id)
+        reg_serializer = RegisteredEventSerializer(reg_obj)
+        reg_data = reg_serializer.data
+        event_obj = Events.objects.get(id=reg_obj.event.id)
+        team_data = None
+        if event_obj.is_team:
+            team_obj = get_team_for_student_and_event(reg_obj.student, reg_obj.event)
+            team_serializer = TeamMembersDetailSerializer(team_obj)
+            team_data = team_serializer.data
+        response = {"registration": reg_data, "team":team_data}
+        return Response(response)
+
+    
+def get_team_for_student_and_event(student, event):
+    try:
+        # Check if the student is a team leader for the given event
+        team = Teams.objects.get(event=event, team_lead=student)
+        return team
+    except Teams.DoesNotExist:
+        try:
+            # Check if the student is a team member for the given event
+            team = Teams.objects.get(event=event, team_member=student)
+            return team
+        except Teams.DoesNotExist:
+            return None
+        
+
 
 
 @csrf_exempt

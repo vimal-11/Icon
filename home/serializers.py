@@ -3,6 +3,7 @@ from .models import Students, Events, Registration, FacultyIncharge, Teams, Cust
 
 
 class StudentsSerializer(serializers.ModelSerializer):
+     email = serializers.EmailField(source='email.email', read_only=True)
      class Meta:
         model = Students
         fields = '__all__'
@@ -17,6 +18,7 @@ class EventsSerializer(serializers.ModelSerializer):
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
+     student = serializers.CharField(source='student.name', read_only=True)
      class Meta:
         model = Registration
         fields = '__all__'
@@ -46,6 +48,7 @@ class FacultyInchargeSerializer(serializers.ModelSerializer):
 
 
 class TeamsSerializer(serializers.ModelSerializer):
+    #  team_member = serializers.PrimaryKeyRelatedField(queryset=Students.objects.all())
      class Meta:
         model = Teams
         fields = '__all__'
@@ -53,6 +56,7 @@ class TeamsSerializer(serializers.ModelSerializer):
 
 
 class RegisteredEventSerializer(serializers.ModelSerializer):
+    student = StudentsSerializer()
     event = EventsSerializer()  # Include the event details
     class Meta:
         model = Registration
@@ -78,3 +82,13 @@ class TeamMemberSerializer(serializers.Serializer):
         if value in team.team_member.all():
             raise serializers.ValidationError("Student is already a team member for this event.")
         return value
+
+
+
+class TeamMembersDetailSerializer(serializers.ModelSerializer):
+    team_lead = StudentsSerializer()  # Serialize the team_lead field
+    team_member = StudentsSerializer(many=True)  # Serialize the team_member field as a list
+
+    class Meta:
+        model = Teams
+        fields = ('id', 'team_lead', 'team_member', 'event')

@@ -68,15 +68,16 @@ class Students(models.Model):
         return None
 
 
+
 class Events(models.Model):
 
     CATEGORY_CHOICES = [
-        ('T', 'Technical'),
-        ('N', 'Non-Technical'),
-        ('C', 'Cultural'),
+        ('Technical', 'Technical'),
+        ('Non-Technical', 'Non-Technical'),
+        ('Cultural', 'Cultural'),
     ]
     title = models.CharField(max_length=200)
-    category = models.CharField(max_length=1, choices=CATEGORY_CHOICES, default='O')
+    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES, default='O')
     cordinator = models.ForeignKey(Students, on_delete=models.SET_NULL, blank=True, null=True)
     date = models.DateField()
     event_time = models.TimeField()
