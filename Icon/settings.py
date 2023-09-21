@@ -99,9 +99,17 @@ WSGI_APPLICATION = 'Icon.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
+    # }
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'icon23',
+        'USER': 'admin',
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
 
@@ -172,5 +180,5 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587  # The SMTP server's port (usually 587 for TLS)
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'icon.ptucse@gmail.com'  # Your email address
-EMAIL_HOST_PASSWORD = 'gzmj grte gygl mddv'
+EMAIL_HOST_USER = 'icon@ptuniv.edu.in'  # Your email address
+EMAIL_HOST_PASSWORD = ''
