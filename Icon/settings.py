@@ -27,7 +27,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['icon-ptucse.in', 'www.icon-ptucse.in', 'api.icon-ptucse.in', 'www.api.icon-ptucse.in', '103.186.120.141']
 
 
 # Application definition
