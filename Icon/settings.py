@@ -14,6 +14,12 @@ from pathlib import Path
 from decouple import config
 import os
 
+# Use pymysql as the database engine
+import pymysql
+pymysql.version_info = (1, 4, 6, "final", 0)  # This line may be needed to avoid a warning
+pymysql.install_as_MySQLdb()
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -26,6 +32,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=False, cast=bool)
+# DEBUB = False
 
 ALLOWED_HOSTS = ['icon-ptucse.in', 'www.icon-ptucse.in', 'api.icon-ptucse.in', 'www.api.icon-ptucse.in', '103.186.120.141']
 
@@ -110,6 +117,11 @@ DATABASES = {
         'PASSWORD': config('DB_PASSWORD'),
         'HOST': 'localhost',
         'PORT': '3306',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'sql_mode': 'STRICT_TRANS_TABLES',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
     }
 }
 
@@ -148,7 +160,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
@@ -161,7 +175,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 RAZORPAY_KEY_ID = config('RAZORPAY_KEY_ID')
 RAZORPAY_KEY_SECRET = config('RAZORPAY_KEY_SECRET')
 
+CSRF_TRUSTED_ORIGINS = ['https://api.icon-ptucse.in','https://103.186.120.141']
+
+CSRF_COOKIE_DOMAIN = 'api.icon-ptucse.in'  # Adjust the domain as needed
+
+
+CSRF_COOKIE_SECURE = True
+
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "https://api.icon-ptucse.in",
+    # Add other trusted origins here
+]
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
