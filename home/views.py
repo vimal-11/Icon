@@ -218,11 +218,15 @@ class RegistrationCreateView(generics.CreateAPIView):
         print("Received data from frontend:")
         print("Request data:", request.data)
         event = self.request.data.get('event')
-        student_id = self.request.data.get('student')
+        uid = self.request.data.get('student')
         # student_name=self.request.data.get('name')
         is_paid = self.request.data.get('is_paid')
+
+        user_instance=CustomUser.objects.get(pk=uid)
+        student_id=Students.objects.get(email=user_instance)
+
         event_instance=Events.objects.get(title=event)
-        student_instance = Students.objects.get(pk=student_id)
+        student_instance = Students.objects.get(pk=student_id.id)
         # print(student_instance,type(student_instance),type(event_instance))
         try:
             registration=Registration(event=event_instance,student=student_instance)

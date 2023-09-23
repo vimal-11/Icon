@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'phonenumber_field',
     'corsheaders',
     'ckeditor',
+    'gunicorn',
 ]
 
 
