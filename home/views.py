@@ -533,8 +533,7 @@ def feedback(request):
         data = json.loads(request.body)
         name = data.get('name')
         email = data.get('email')
-        message = data.get('message')
-
+        message = data.get('feedback')
         # Send an email to notify you about the feedback
         subject = 'New Feedback Received'
         message = f'Name: {name}\nEmail: {email}\nMessage: {message}'
