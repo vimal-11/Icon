@@ -207,4 +207,4 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587  # The SMTP server's port (usually 587 for TLS)
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'icon@ptuniv.edu.in'  # Your email address
-EMAIL_HOST_PASSWORD = ''
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')

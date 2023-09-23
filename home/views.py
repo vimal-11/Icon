@@ -538,8 +538,8 @@ def feedback(request):
         # Send an email to notify you about the feedback
         subject = 'New Feedback Received'
         message = f'Name: {name}\nEmail: {email}\nMessage: {message}'
-        from_email = settings.EMAIL_HOST_USER
-        recipient_list = [email]  # Replace with your email address
+        from_email = email
+        recipient_list = [settings.EMAIL_HOST_USER]  # Replace with your email address
 
         send_mail(subject, message, from_email, recipient_list)
 
