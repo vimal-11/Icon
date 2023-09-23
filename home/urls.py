@@ -22,6 +22,7 @@ urlpatterns = [
     path('teams/<int:pk>/', TeamsDetailView.as_view(), name='teams-detail'),
 
     path('api/razorpay/', RazorpayPaymentView.as_view(), name='razorpay'),
+    path('api/callback/', order_callback, name='razorpay_callback'),
 
     path('events/', EventsList.as_view(), name='event-names'),
     path('event-detail/<int:event_id>/', EventDetailView.as_view(), name='event-detail'),

@@ -3,6 +3,7 @@ from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 from ckeditor.fields import RichTextField
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.db.models import UniqueConstraint
 
 # Create your models here.
 
@@ -144,3 +145,12 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.student.name} - {self.event.title} - Payment {self.id}"
+
+    class Meta:
+        # Add a unique constraint to ensure only one payment per student and event
+        constraints = [
+            UniqueConstraint(
+                fields=['student', 'event'],
+                name='unique_payment_for_student_and_event'
+            )
+        ]
