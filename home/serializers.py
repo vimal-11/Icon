@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Students, Events, Registration, FacultyIncharge, Teams, CustomUser
+from .models import Students, Events, Registration, FacultyIncharge, Teams, CustomUser, Payment
 
 
 class StudentsSerializer(serializers.ModelSerializer):
@@ -92,3 +92,15 @@ class TeamMembersDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teams
         fields = ('id', 'team_lead', 'team_member', 'event')
+
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    # Create nested serializers for related objects
+    student = StudentsSerializer()  # Assuming you have a StudentSerializer
+    event = EventsSerializer()      # Assuming you have an EventSerializer
+    registration = RegisteredEventSerializer()  # Assuming you have a RegistrationSerializer
+
+    class Meta:
+        model = Payment
+        fields = '__all__'

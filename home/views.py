@@ -18,7 +18,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.db.models import Q
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 import razorpay
 import json
 
@@ -464,6 +464,33 @@ def order_callback(request):
                     reg_obj = Registration.objects.get(event=event.id, student=student.id)
                     reg_obj.is_paid = True
                     reg_obj.save()
+
+                    if event.is_team:
+                        team_member_ids = []
+                        # Check if the paying student is a team member
+                        team = Teams.objects.filter(event=event.id, team_member=student.id).first()
+                        print("team member pay", team)
+                        if team:
+                            # Include the team lead in the list of team members
+                            team_member_ids = team.team_member.values_list('id', flat=True)
+                            team_member_ids = list(team_member_ids)
+                            team_member_ids.append(team.team_lead.id)
+
+                        else:
+                            # Check if the paying student is a team lead
+                            team = Teams.objects.filter(event=event.id, team_lead=student.id).first()
+                            print("team lead pay", team)
+                            if team:
+                                # Include all team members in the list, including the team lead
+                                team_member_ids = team.team_member.values_list('id', flat=True)
+                                team_member_ids = list(team_member_ids)
+                                team_member_ids.append(student.id)  # Append the team lead's ID
+
+                         # Update the registration status for all team members
+                        if team_member_ids:
+                            with transaction.atomic():
+                                Registration.objects.filter(event=event.id, student__in=team_member_ids).update(is_paid=True)
+
                     return JsonResponse({"res":"success"})
                     # Logic to perform is payment is successful
                 else:
@@ -498,7 +525,7 @@ class EventTeamLeadView(generics.RetrieveAPIView):
         event_id = self.kwargs['event_id']
 
         try:
-            student = Students.objects.get(id=student_id)
+            student = Students.objects.get(id=student_id.id)
             event = Events.objects.get(id=event_id)
             team = Teams.objects.get(event=event, team_lead=student)
             serializer = self.get_serializer(team)
