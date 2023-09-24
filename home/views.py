@@ -222,12 +222,20 @@ class RegistrationCreateView(generics.CreateAPIView):
         # student_name=self.request.data.get('name')
         is_paid = self.request.data.get('is_paid')
 
-        user_instance=CustomUser.objects.get(pk=uid)
-        student_id=Students.objects.get(email=user_instance)
+        try:
+            user_instance=CustomUser.objects.get(pk=uid)
+            student_id=Students.objects.get(email=user_instance)
 
-        event_instance=Events.objects.get(title=event)
-        student_instance = Students.objects.get(pk=student_id.id)
-        # print(student_instance,type(student_instance),type(event_instance))
+            event_instance=Events.objects.get(title=event)
+            student_instance = Students.objects.get(pk=student_id.id)
+            print(student_instance,type(student_instance),type(event_instance))
+        except CustomUser.DoesNotExist:
+                return JsonResponse({"error": "User and Profile does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        except Students.DoesNotExist:
+                return JsonResponse({"error": "User and Profile does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        except Events.DoesNotExist:
+                return JsonResponse({"error": "Event does not exist."}, status=status.HTTP_403_FORBIDDEN)
+
         try:
             registration=Registration(event=event_instance,student=student_instance)
             registration.save()
@@ -250,10 +258,10 @@ class RegistrationCreateView(generics.CreateAPIView):
             return Response(data,status=status.HTTP_201_CREATED)
         except IntegrityError:
         # Handle the case where a registration already exists for the given event and student
-            return Response({"error": "Registration already exists for this event and student."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Registration already exists for this event and student."}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+        
 
 
 
