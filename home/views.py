@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.mail import send_mail
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.urls import reverse
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
@@ -12,6 +13,13 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from django.contrib.auth.views import PasswordResetCompleteView
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.sites.shortcuts import get_current_site
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import authenticate, login, logout
 from django.core.files.storage import default_storage
 from django.http import JsonResponse
@@ -618,3 +626,43 @@ def feedback(request):
         return JsonResponse({'message': 'Feedback submitted successfully'})
     except Exception as e:
         return JsonResponse({'error': str(e)})
+    
+
+
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [permissions.AllowAny]
+    queryset = CustomUser.objects.all()
+    serializer_class = PasswordResetSerializer
+    def post(self, request):
+        print(request.data)
+        serializer = PasswordResetSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            try:
+                user = CustomUser.objects.get(email=email)
+            except CustomUser.DoesNotExist:
+                return Response({'detail': 'User with this email does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            current_site = get_current_site(request)
+            print(current_site, current_site.domain)
+            mail_subject = 'Reset your password'
+            message = (
+                f"Hello {user.email},\n\n"
+                f"Click the following link to reset your password:\n\n"
+                f"{current_site.domain}{reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})}\n\n"
+                f"If you did not request a password reset, please ignore this email."
+            )
+            send_mail(mail_subject, message, settings.EMAIL_HOST_USER, [email])
+            return Response({'detail': 'Password reset email sent.'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+
+class CustomPasswordResetCompleteView(PasswordResetCompleteView):
+    def get(self, request, *args, **kwargs):
+        # Customize the success URL
+        nextjs_url = 'https://icon-ptucse.in/login'  # Replace with your Next.js URL
+        return redirect(nextjs_url)

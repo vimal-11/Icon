@@ -104,3 +104,9 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = '__all__'
+
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
