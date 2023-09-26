@@ -661,8 +661,8 @@ class PasswordResetRequestView(APIView):
 
 
 
-class CustomPasswordResetCompleteView(PasswordResetCompleteView):
-    def get(self, request, *args, **kwargs):
-        # Customize the success URL
-        nextjs_url = 'https://icon-ptucse.in/login'  # Replace with your Next.js URL
-        return redirect(nextjs_url)
+# class CustomPasswordResetCompleteView(PasswordResetCompleteView):
+#     def get(self, request, *args, **kwargs):
+#         # Customize the success URL
+#         nextjs_url = 'https://icon-ptucse.in/login'  # Replace with your Next.js URL
+#         return redirect(nextjs_url)
