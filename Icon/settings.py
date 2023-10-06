@@ -209,3 +209,8 @@ EMAIL_PORT = 587  # The SMTP server's port (usually 587 for TLS)
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'icon@ptuniv.edu.in'  # Your email address
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5 MB
+
+FILE_UPLOAD_HANDLERS = ["django.core.files.uploadhandler.MemoryFileUploadHandler"]
+FILE_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 10  # 10 MB

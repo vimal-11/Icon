@@ -111,6 +111,7 @@ class Registration(models.Model):
     student = models.ForeignKey(Students, on_delete=models.CASCADE, blank=True, null=True)
     is_paid = models.BooleanField(default=False)
     registered_at = models.DateTimeField(auto_now=True) 
+    is_reported = models.BooleanField(default=False)
 
     class Meta:
         # Enforce uniqueness of event-student pairs

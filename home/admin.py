@@ -57,7 +57,7 @@ admin.site.register(FacultyIncharge, FacultyInchargeAdmin)
 
 class RegistrationAdmin(admin.ModelAdmin):
     list_filter = ['event', 'student', 'is_paid']
-    list_display = ['event', 'student', 'registered_at']
+    list_display = ['event', 'student', 'registered_at', 'is_paid', 'is_reported']
     search_fields = ['event', 'student']
 
     class Meta:
