@@ -266,7 +266,7 @@ class RegistrationCreateView(generics.CreateAPIView):
             return Response(data,status=status.HTTP_201_CREATED)
         except IntegrityError:
         # Handle the case where a registration already exists for the given event and student
-            return Response({"error": "Registration already exists for this event and student."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Registration already exists for this event and student."}, status=status.HTTP_403_BAD_REQUEST)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
