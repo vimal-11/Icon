@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'ckeditor',
     'gunicorn',
+    'import_export',
 ]
 
 
